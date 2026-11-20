@@ -44,7 +44,10 @@ def main():
     md = [f"# Trend radar: \"{a.query}\", last {a.hours:.0f} h ({time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime())})", "",
           "| # | views/h | views | age h | min | channel | title | most replayed |", "|---|---|---|---|---|---|---|---|"]
     for k, r in enumerate(rows, 1):
-        md.append(f"| {k} | {r[0]:,.0f} | {r[1]:,} | {r[2]:.1f} | {r[3] / 60:.0f} | {r[4]} | [{r[5][:70]}]({r[6]}) | {'yes' if r[7] else ''} |")
+        channel = str(r[4]).replace("|", "/")
+        title = str(r[5]).replace("|", "/").replace("[", "\\[").replace("]", "\\]")[:70]
+        url = str(r[6] or "")
+        md.append(f"| {k} | {r[0]:,.0f} | {r[1]:,} | {r[2]:.1f} | {r[3] / 60:.0f} | {channel} | [{title}]({url}) | {'yes' if r[7] else ''} |")
     Path(a.out).write_text("\n".join(md) + "\n", encoding="utf-8")
     print("\n".join(md[:14]))
     print(f"... {len(rows)} videos -> {a.out}")

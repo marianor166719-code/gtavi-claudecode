@@ -68,10 +68,10 @@ def twitch_nokey(game="Grand Theft Auto VI", limit=20):
              "live_for": fmt_dur(now - tw.started_ts(r["created_at"])) if tw.started_ts(r["created_at"]) else ""} for r in rows]
 
 
-def twitch(query):
+def twitch(query, limit=20):
     cid, tok = os.environ.get("TWITCH_CLIENT_ID"), os.environ.get("TWITCH_TOKEN")
     if not (cid and tok):
-        return twitch_nokey()
+        return twitch_nokey(query, limit)
     import requests
     h = {"Client-Id": cid, "Authorization": f"Bearer {tok}"}
     try:
@@ -117,8 +117,10 @@ def main():
     ap.add_argument("--query", default="gta 6"); ap.add_argument("--limit", type=int, default=20)
     ap.add_argument("--out", default="streams.md")
     a = ap.parse_args()
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")
     sections = [("YouTube", youtube(a.query, a.limit))]
-    t = twitch(a.query)
+    t = twitch(a.query, a.limit)
     if t:
         t = sorted(t, key=lambda r: r["viewers"] or -1, reverse=True)[:a.limit]
     if t is not None:
@@ -137,7 +139,8 @@ def main():
         md += ["| # | Channel | Title | Viewers | Live for | URL |", "|---|---|---|---|---|---|"]
         for n, r in enumerate(rows, 1):
             v = "" if r["viewers"] is None else r["viewers"]
-            md.append(f"| {n} | {r['channel']} | {r['title'].replace('|', '/')} | {v} | {r['live_for']} | {r['url']} |")
+            channel = str(r["channel"]).replace("|", "/")
+            md.append(f"| {n} | {channel} | {r['title'].replace('|', '/')} | {v} | {r['live_for']} | {r['url']} |")
             print(f"{name:8} {str(v):>7}  {r['channel'][:24]:24} {r['title'][:50]:50} {r['url']}")
         md.append("")
     Path(a.out).write_text("\n".join(md), encoding="utf-8")
